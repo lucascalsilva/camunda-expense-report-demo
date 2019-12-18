@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/DMN/20151101/dmn.xsd" xmlns:camunda="http://camunda.org/schema/1.0/dmn" id="Definitions_00dfjbr" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="3.3.2">
+  <decision id="define-approval-level-er" name="Define Approval Level for Expense Report">
+    <decisionTable id="decisionTable_1">
+      <input id="InputClause_09a4wbf" label="Amount" camunda:inputVariable="amount">
+        <inputExpression id="LiteralExpression_19i91u1" typeRef="double">
+          <text>amount</text>
+        </inputExpression>
+      </input>
+      <output id="output_1" label="Approval Level" name="approvalLevel" typeRef="long" />
+      <rule id="DecisionRule_12t6o7a">
+        <inputEntry id="UnaryTests_0lzyqsv">
+          <text>[0..1000]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_07ozjfo">
+          <text>1</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0146kcp">
+        <inputEntry id="UnaryTests_0iev42b">
+          <text>(1000..5000]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1x5z80c">
+          <text>2</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1gugc6n">
+        <inputEntry id="UnaryTests_0o1vc9p">
+          <text>(5000..10000]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1hlm8jj">
+          <text>3</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1e6nq8s">
+        <inputEntry id="UnaryTests_1vcklpk">
+          <text>&gt;10000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0q90x8i">
+          <text>4</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

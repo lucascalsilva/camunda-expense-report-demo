@@ -1,0 +1,147 @@
+<form name="handlePaymentIssues" role="form">
+    <script cam-script type="text/form-script">
+        function clearHashKey(){
+            angular.forEach($scope.expenseReport.expenses, function(expense) {
+                delete expense.$$hashKey;
+            });
+
+            angular.forEach($scope.expenseReport.approvals, function(approval) {
+                delete approval.$$hashKey;
+            });
+        }
+
+        $scope.clearApproval = function(){
+            $scope.expenseReport.lastApproval = null;
+        }
+
+        camForm.on('form-loaded', function() {
+			camForm.variableManager.fetchVariable('expenseReport');
+        });
+
+        camForm.on('variables-fetched', function() {
+            $scope.expenseReport = camForm.variableManager.variable('expenseReport').value;
+
+			inject(['$filter', function($filter) {
+                $scope.creationDate = $filter('date')(new Date($scope.expenseReport.creationDate),'dd/MM/yyyy');
+                $scope.totalAmount = $filter('currency')($scope.expenseReport.totalAmount, "EUR ");
+		    }]);
+		});
+
+        camForm.on('submit', function() {
+           clearHashKey();
+		   inject(['$rootScope', function($rootScope) {
+             var approver = $rootScope.authentication.name;
+             $scope.expenseReport.approvals
+                .filter(approval => approval.approver.participant.user == approver)[0]
+                .approvalStatus = $scope.expenseReport.lastApproval;
+		    }]);
+        });
+
+        $scope.requestChanges = function(expenseReport) {
+           clearHashKey();
+           expenseReport.lastApproval = "REQUEST_CHANGES";
+		   var data = {
+	            "messageName" : "MESSAGE_REQUEST_CHANGES",
+	       		"businessKey" : $scope.expenseReport.number,
+	       		"processVariables": {
+	       			"expenseReport": {
+	       				"value":  JSON.stringify(expenseReport),
+	       				"type": "string"
+	       			}
+	       	    }
+	       };
+
+		   var req = {
+		         method : 'POST',
+		         url : '/rest/message/',
+		         headers : {
+		            'Content-Type' : 'application/json'
+		         },
+		         data: JSON.stringify(data)
+	        };
+
+            inject(['$http', function($http) {
+                $http(req).then(function (result) {
+                    var cur = $scope;
+                    while (cur.$parent) {
+                        cur = cur.$parent;
+                        if (cur.dismissTask) {
+                            cur.dismissTask();
+                            break;
+                        }
+                    }
+                });
+		    }]);
+	    };
+    </script>
+
+    <div class="control-group">
+        <label class="control-label" for="number">Expense Report Number</label>
+        <p id="number">{{expenseReport.number}}</p>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="creationDate">Creation Date</label>
+        <p id="creationDate">{{creationDate}}</p>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="requesterName">Requester Name</label>
+        <p id="requesterName">{{expenseReport.requester.name}}</p>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="justification">Justification</label>
+        <p id="justification">{{expenseReport.justification}}</p>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="totalAmount">Total Amount</label>
+        <p id="totalAmount">{{totalAmount}}</p>
+    </div>
+
+    <div>
+        <h3>Expenses</h3>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <td><b>Amount</b></td>
+                <td><b>Description</b></td>
+                <td><b>Expense Date</b></td>
+                <td></td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="expense in expenseReport.expenses">
+                <td>{{ expense.amount | currency:"EUR " }}</td>
+                <td>{{ expense.description }}</td>
+                <td>{{ expense.expenseDate | date : 'dd/MM/yyyy' }}</td>
+                <td></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="changesDescription">Request Changes</label>
+        <div class="controls">
+            <input id="changesDescription" ng-model="expenseReport.changesDescription"
+                   ng-keypress="clearApproval()"/>
+            <a class="btn btn-default" href="" ng-click="requestChanges(expenseReport)"
+               tooltip-placement="left" ng-disabled="!expenseReport.changesDescription">Request</a>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="approvalStatus">Approval Status</label>
+        <div class="controls">
+            <select id="approvalStatus" class="form-control" ng-model="expenseReport.lastApproval" required
+                    ng-disabled="expenseReport.changesDescription">
+                <option value=""></option>
+                <option value="APPROVED">Approved</option>
+                <option value="DECLINED">Decline</option>
+            </select>
+        </div>
+    </div>
+</form>

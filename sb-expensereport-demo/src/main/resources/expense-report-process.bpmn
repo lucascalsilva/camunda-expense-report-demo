@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.5.0">
+  <bpmn:message id="Message_0frvsoo" name="MessageRequestChanges" />
+  <bpmn:message id="Message_183m1vh" name="MessageChangesReceived" />
+  <bpmn:process id="expense-report-approval-process" name="Expense Report Approval Process" isExecutable="true">
+    <bpmn:endEvent id="ExpenseReportPaidEndEvent" name="Expense Report Paid">
+      <bpmn:incoming>SequenceFlow_1j7wxxe</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:callActivity id="PaymentProcessCallActivity" name="Payment Process" calledElement="payment-process">
+      <bpmn:extensionElements>
+        <camunda:in variables="all" />
+        <camunda:out variables="all" />
+        <camunda:in businessKey="${execution.processBusinessKey}" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_115jbvn</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1j7wxxe</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:intermediateCatchEvent id="ChangesReceivedEvent" name="Changes Received">
+      <bpmn:incoming>SequenceFlow_01zq2i8</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0nhj78y</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_1ddhduh" messageRef="Message_183m1vh" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="NotifyDeclineTask" name="Notify Decline" camunda:delegateExpression="${notificationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="emailType">APPROVAL</camunda:inputParameter>
+          <camunda:inputParameter name="participant">${expenseReport.requester}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>NoSequenceFlow</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1vgwuct</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="NotifyApprovalTask" name="Notify Approval" camunda:delegateExpression="${notificationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="emailType">APPROVAL</camunda:inputParameter>
+          <camunda:inputParameter name="participant">${expenseReport.requester}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>YesSequenceFlow</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_076p73r</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="NotifyNeedForChangesTask" name="Notify Need for Changes" camunda:delegateExpression="${notificationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="emailType">APPROVAL</camunda:inputParameter>
+          <camunda:inputParameter name="participant">${expenseReport.requester}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1xykhos</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_01zq2i8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="IsTheExpenseRepportApprovedGateway" name="Is the Expense Repport Approved?" default="YesSequenceFlow">
+      <bpmn:incoming>SequenceFlow_1neo2d5</bpmn:incoming>
+      <bpmn:outgoing>NoSequenceFlow</bpmn:outgoing>
+      <bpmn:outgoing>YesSequenceFlow</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="ApproveExpenseReportTask" name="Approve Expense Report" camunda:formKey="embedded:app:forms/approve-expense-report.html" camunda:assignee="${approval.approver.participant.user}">
+      <bpmn:incoming>SequenceFlow_1wotzwu</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1neo2d5</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true" camunda:collection="${expenseReport.approvals}" camunda:elementVariable="approval">
+        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">${expenseReport.lastApproval != "DECLINED"}</bpmn:completionCondition>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:endEvent id="ExpenseReportRejectedEndEvent" name="Expense Report Rejected">
+      <bpmn:incoming>SequenceFlow_0dn19bp</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="DefineApproversTask" name="Define Approvers" camunda:delegateExpression="${approversDelegate}">
+      <bpmn:incoming>SequenceFlow_0wezazb</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1wotzwu</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:businessRuleTask id="DefineApprovalLevelTask" name="Define Approval Level" camunda:resultVariable="approvalLevel" camunda:decisionRef="define-approval-level-er" camunda:mapDecisionResult="singleEntry">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="amount">${expenseReport.totalAmount}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0nhj78y</bpmn:incoming>
+      <bpmn:incoming>SequenceFlow_1carzor</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0wezazb</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:boundaryEvent id="ChangesRequestedBoundaryEvent" name="Changes Requested" attachedToRef="ApproveExpenseReportTask">
+      <bpmn:outgoing>SequenceFlow_1xykhos</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0xx396e" messageRef="Message_0frvsoo" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1j7wxxe" sourceRef="PaymentProcessCallActivity" targetRef="ExpenseReportPaidEndEvent" />
+    <bpmn:sequenceFlow id="SequenceFlow_076p73r" sourceRef="NotifyApprovalTask" targetRef="UpdateExpenseStatusApprovedTask" />
+    <bpmn:sequenceFlow id="SequenceFlow_01zq2i8" sourceRef="NotifyNeedForChangesTask" targetRef="ChangesReceivedEvent" />
+    <bpmn:sequenceFlow id="SequenceFlow_0nhj78y" sourceRef="ChangesReceivedEvent" targetRef="DefineApprovalLevelTask" />
+    <bpmn:sequenceFlow id="NoSequenceFlow" name="No" sourceRef="IsTheExpenseRepportApprovedGateway" targetRef="NotifyDeclineTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${expenseReport.lastApproval == "DECLINED"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="SequenceFlow_1vgwuct" sourceRef="NotifyDeclineTask" targetRef="UpdateExpenseStatusDeclinedTask" />
+    <bpmn:sequenceFlow id="YesSequenceFlow" name="Yes" sourceRef="IsTheExpenseRepportApprovedGateway" targetRef="NotifyApprovalTask" />
+    <bpmn:sequenceFlow id="SequenceFlow_1xykhos" sourceRef="ChangesRequestedBoundaryEvent" targetRef="NotifyNeedForChangesTask" />
+    <bpmn:sequenceFlow id="SequenceFlow_1neo2d5" sourceRef="ApproveExpenseReportTask" targetRef="IsTheExpenseRepportApprovedGateway" />
+    <bpmn:sequenceFlow id="SequenceFlow_1wotzwu" sourceRef="DefineApproversTask" targetRef="ApproveExpenseReportTask" />
+    <bpmn:sequenceFlow id="SequenceFlow_0wezazb" sourceRef="DefineApprovalLevelTask" targetRef="DefineApproversTask" />
+    <bpmn:sequenceFlow id="SequenceFlow_1carzor" sourceRef="ExpenseReportApprovalRequestStartEvent" targetRef="DefineApprovalLevelTask" />
+    <bpmn:subProcess id="SubProcess_0jkvf82" triggeredByEvent="true">
+      <bpmn:sequenceFlow id="SequenceFlow_1lcw7ga" sourceRef="ProcessDeadlineStartEvent" targetRef="NotifyExpenseManagerTask" />
+      <bpmn:endEvent id="ManagerNotifiedEndEvent" name="Manager Notified">
+        <bpmn:incoming>SequenceFlow_1alc98t</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_1alc98t" sourceRef="NotifyExpenseManagerTask" targetRef="ManagerNotifiedEndEvent" />
+      <bpmn:serviceTask id="NotifyExpenseManagerTask" name="Notify Expense Manager" camunda:delegateExpression="${notificationDelegate}">
+        <bpmn:extensionElements>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="emailType">EXPENSE_MANAGER</camunda:inputParameter>
+            <camunda:inputParameter name="participant">${expenseReport.expenseManager}</camunda:inputParameter>
+          </camunda:inputOutput>
+        </bpmn:extensionElements>
+        <bpmn:incoming>SequenceFlow_1lcw7ga</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_1alc98t</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:startEvent id="ProcessDeadlineStartEvent" name="Process Deadline" isInterrupting="false">
+        <bpmn:outgoing>SequenceFlow_1lcw7ga</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerEventDefinition_01gxcep">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT5M</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:startEvent>
+    </bpmn:subProcess>
+    <bpmn:subProcess id="SubProcess_0siodnq" triggeredByEvent="true">
+      <bpmn:startEvent id="CancelProcessStartEvent" name="Cancel Process">
+        <bpmn:outgoing>SequenceFlow_0ngjduy</bpmn:outgoing>
+        <bpmn:messageEventDefinition messageRef="Message_1kc05tc" />
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_0ngjduy" sourceRef="CancelProcessStartEvent" targetRef="NotifyProcessCancelationTask" />
+      <bpmn:serviceTask id="NotifyProcessCancelationTask" name="Notify Process Cancelation" camunda:delegateExpression="${notificationDelegate}">
+        <bpmn:extensionElements>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="emailType">APPROVAL</camunda:inputParameter>
+            <camunda:inputParameter name="participant">${expenseReport.requester}</camunda:inputParameter>
+          </camunda:inputOutput>
+        </bpmn:extensionElements>
+        <bpmn:incoming>SequenceFlow_0ngjduy</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_0nq2u01</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="ProcessCancelledEndEvent" name="Process Cancelled">
+        <bpmn:incoming>SequenceFlow_0nq2u01</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_0nq2u01" sourceRef="NotifyProcessCancelationTask" targetRef="ProcessCancelledEndEvent" />
+    </bpmn:subProcess>
+    <bpmn:boundaryEvent id="PaymentIssueBoundaryEvent" name="Payment Issue" attachedToRef="PaymentProcessCallActivity">
+      <bpmn:outgoing>SequenceFlow_1h9x3fq</bpmn:outgoing>
+      <bpmn:errorEventDefinition errorRef="Error_0yg57qn" camunda:errorCodeVariable="PaymentIssueCode" camunda:errorMessageVariable="PaymentMessageCode" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1h9x3fq" sourceRef="PaymentIssueBoundaryEvent" targetRef="NotifyPaymentIssueTask" />
+    <bpmn:sequenceFlow id="SequenceFlow_0xq6180" sourceRef="NotifyPaymentIssueTask" targetRef="ExpenseReportWithPaymentIssuesEndEvent" />
+    <bpmn:serviceTask id="NotifyPaymentIssueTask" name="Notify Payment Issue" camunda:delegateExpression="${notificationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="emailType">PAYMENT_ISSUE</camunda:inputParameter>
+          <camunda:inputParameter name="participant">${expenseReport.requester}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1h9x3fq</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0xq6180</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="ExpenseReportWithPaymentIssuesEndEvent" name="Expense Report With Payment Issues">
+      <bpmn:incoming>SequenceFlow_0xq6180</bpmn:incoming>
+      <bpmn:escalationEventDefinition escalationRef="Escalation_116p4zx" />
+    </bpmn:endEvent>
+    <bpmn:subProcess id="SubProcess_0ay2kvb" triggeredByEvent="true">
+      <bpmn:startEvent id="PaymentIssueStartEvent" name="Payment Issue">
+        <bpmn:outgoing>SequenceFlow_1isdpsn</bpmn:outgoing>
+        <bpmn:escalationEventDefinition escalationRef="Escalation_116p4zx" />
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_1isdpsn" sourceRef="PaymentIssueStartEvent" targetRef="HandlePaymentIssuesTask" />
+      <bpmn:userTask id="HandlePaymentIssuesTask" name="Handle Payment Issues" camunda:formKey="embedded:app:forms/handle-payment-issues.html">
+        <bpmn:incoming>SequenceFlow_1isdpsn</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_1l9ircl</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:exclusiveGateway id="WhereIssuesHandledGateway" name="Where Issues Handled?" default="YesSequenceFlow1">
+        <bpmn:incoming>SequenceFlow_1l9ircl</bpmn:incoming>
+        <bpmn:outgoing>YesSequenceFlow1</bpmn:outgoing>
+        <bpmn:outgoing>NoSequenceFlow1</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:sequenceFlow id="SequenceFlow_1l9ircl" sourceRef="HandlePaymentIssuesTask" targetRef="WhereIssuesHandledGateway" />
+      <bpmn:endEvent id="PaymentIssuesSolvedEndEvent" name="Payment Issues Solved">
+        <bpmn:incoming>YesSequenceFlow1</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="YesSequenceFlow1" name="Yes" sourceRef="WhereIssuesHandledGateway" targetRef="PaymentIssuesSolvedEndEvent" />
+      <bpmn:sequenceFlow id="NoSequenceFlow1" name="No" sourceRef="WhereIssuesHandledGateway" targetRef="PaymentIssuesNotSolvedEndEvent">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${not issuesHandled}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:endEvent id="PaymentIssuesNotSolvedEndEvent" name="Payment Issues Not Solved">
+        <bpmn:incoming>NoSequenceFlow1</bpmn:incoming>
+      </bpmn:endEvent>
+    </bpmn:subProcess>
+    <bpmn:startEvent id="ExpenseReportApprovalRequestStartEvent" name="Expense Report Approval Request">
+      <bpmn:outgoing>SequenceFlow_1carzor</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_115jbvn" sourceRef="UpdateExpenseStatusApprovedTask" targetRef="PaymentProcessCallActivity" />
+    <bpmn:sequenceFlow id="SequenceFlow_0dn19bp" sourceRef="UpdateExpenseStatusDeclinedTask" targetRef="ExpenseReportRejectedEndEvent" />
+    <bpmn:serviceTask id="UpdateExpenseStatusDeclinedTask" name="Update Expense Status Declined" camunda:delegateExpression="${updateERDelegate}">
+      <bpmn:incoming>SequenceFlow_1vgwuct</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0dn19bp</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="UpdateExpenseStatusApprovedTask" name="Update Expense Status Approved" camunda:delegateExpression="${updateERDelegate}">
+      <bpmn:incoming>SequenceFlow_076p73r</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_115jbvn</bpmn:outgoing>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmn:error id="Error_0yg57qn" name="Payment Issue" errorCode="PaymentIssue" />
+  <bpmn:escalation id="Escalation_116p4zx" name="ExpensePaymentIssues" escalationCode="Expense Payment Issues" />
+  <bpmn:message id="Message_1kc05tc" name="MessageCancelProcess" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="expense-report-approval-process">
+      <bpmndi:BPMNShape id="EndEvent_16pme9u_di" bpmnElement="ExpenseReportPaidEndEvent">
+        <dc:Bounds x="1438" y="613" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1417" y="656" width="79" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CallActivity_195awx0_di" bpmnElement="PaymentProcessCallActivity">
+        <dc:Bounds x="1184" y="591" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="IntermediateCatchEvent_0bni327_di" bpmnElement="ChangesReceivedEvent">
+        <dc:Bounds x="571" y="822" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="566" y="865" width="46" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_19a8r2z_di" bpmnElement="NotifyDeclineTask">
+        <dc:Bounds x="844" y="475" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0ocdgo3_di" bpmnElement="NotifyApprovalTask">
+        <dc:Bounds x="844" y="591" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0ofjvxy_di" bpmnElement="NotifyNeedForChangesTask">
+        <dc:Bounds x="665" y="737" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_0k1folh_di" bpmnElement="IsTheExpenseRepportApprovedGateway" isMarkerVisible="true">
+        <dc:Bounds x="733" y="606" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="722" y="663" width="73" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_0yjt5xd_di" bpmnElement="ApproveExpenseReportTask">
+        <dc:Bounds x="562" y="591" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1omxjdj_di" bpmnElement="ExpenseReportRejectedEndEvent">
+        <dc:Bounds x="1438" y="497" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1417" y="540" width="79" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1ci8t2z_di" bpmnElement="DefineApproversTask">
+        <dc:Bounds x="410" y="591" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BusinessRuleTask_1yzhsg6_di" bpmnElement="DefineApprovalLevelTask">
+        <dc:Bounds x="265" y="591" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_0bmefk6_di" bpmnElement="ChangesRequestedBoundaryEvent">
+        <dc:Bounds x="624" y="653" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="615" y="694" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1j7wxxe_di" bpmnElement="SequenceFlow_1j7wxxe">
+        <di:waypoint x="1284" y="631" />
+        <di:waypoint x="1438" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_076p73r_di" bpmnElement="SequenceFlow_076p73r">
+        <di:waypoint x="944" y="631" />
+        <di:waypoint x="1012" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_01zq2i8_di" bpmnElement="SequenceFlow_01zq2i8">
+        <di:waypoint x="715" y="817" />
+        <di:waypoint x="715" y="840" />
+        <di:waypoint x="607" y="840" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0nhj78y_di" bpmnElement="SequenceFlow_0nhj78y">
+        <di:waypoint x="571" y="840" />
+        <di:waypoint x="315" y="840" />
+        <di:waypoint x="315" y="671" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1h784ns_di" bpmnElement="NoSequenceFlow">
+        <di:waypoint x="758" y="606" />
+        <di:waypoint x="758" y="515" />
+        <di:waypoint x="844" y="515" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="762" y="523" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1vgwuct_di" bpmnElement="SequenceFlow_1vgwuct">
+        <di:waypoint x="944" y="515" />
+        <di:waypoint x="1012" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0ejd7q7_di" bpmnElement="YesSequenceFlow">
+        <di:waypoint x="783" y="631" />
+        <di:waypoint x="844" y="631" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="805" y="613" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1xykhos_di" bpmnElement="SequenceFlow_1xykhos">
+        <di:waypoint x="642" y="689" />
+        <di:waypoint x="642" y="777" />
+        <di:waypoint x="665" y="777" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1neo2d5_di" bpmnElement="SequenceFlow_1neo2d5">
+        <di:waypoint x="662" y="631" />
+        <di:waypoint x="733" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1wotzwu_di" bpmnElement="SequenceFlow_1wotzwu">
+        <di:waypoint x="510" y="631" />
+        <di:waypoint x="562" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0wezazb_di" bpmnElement="SequenceFlow_0wezazb">
+        <di:waypoint x="365" y="631" />
+        <di:waypoint x="410" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1carzor_di" bpmnElement="SequenceFlow_1carzor">
+        <di:waypoint x="217" y="631" />
+        <di:waypoint x="265" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="SubProcess_1xmaz68_di" bpmnElement="SubProcess_0jkvf82" isExpanded="true">
+        <dc:Bounds x="167" y="87" width="406" height="187" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1lcw7ga_di" bpmnElement="SequenceFlow_1lcw7ga">
+        <di:waypoint x="248" y="183" />
+        <di:waypoint x="308" y="183" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_15rzrvk_di" bpmnElement="ManagerNotifiedEndEvent">
+        <dc:Bounds x="473" y="165" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="449" y="208" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1alc98t_di" bpmnElement="SequenceFlow_1alc98t">
+        <di:waypoint x="408" y="183" />
+        <di:waypoint x="473" y="183" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_1k5p0nc_di" bpmnElement="NotifyExpenseManagerTask">
+        <dc:Bounds x="308" y="143" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1firduv_di" bpmnElement="ProcessDeadlineStartEvent">
+        <dc:Bounds x="212" y="165" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="187" y="208" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_1q4t015_di" bpmnElement="SubProcess_0siodnq" isExpanded="true">
+        <dc:Bounds x="167" y="304" width="406" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1c8oq3b_di" bpmnElement="CancelProcessStartEvent">
+        <dc:Bounds x="203" y="379" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="182" y="422" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0ngjduy_di" bpmnElement="SequenceFlow_0ngjduy">
+        <di:waypoint x="239" y="397" />
+        <di:waypoint x="306" y="397" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BoundaryEvent_1fo45lc_di" bpmnElement="PaymentIssueBoundaryEvent">
+        <dc:Bounds x="1190" y="653" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1214" y="698" width="73" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1h9x3fq_di" bpmnElement="SequenceFlow_1h9x3fq">
+        <di:waypoint x="1208" y="689" />
+        <di:waypoint x="1208" y="766" />
+        <di:waypoint x="1273" y="766" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0xq6180_di" bpmnElement="SequenceFlow_0xq6180">
+        <di:waypoint x="1373" y="766" />
+        <di:waypoint x="1438" y="766" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_1rny82z_di" bpmnElement="NotifyPaymentIssueTask">
+        <dc:Bounds x="1273" y="726" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1tuco2e_di" bpmnElement="NotifyProcessCancelationTask">
+        <dc:Bounds x="306" y="357" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1j0jda9_di" bpmnElement="ProcessCancelledEndEvent">
+        <dc:Bounds x="468" y="379" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="462" y="422" width="49" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0nq2u01_di" bpmnElement="SequenceFlow_0nq2u01">
+        <di:waypoint x="406" y="397" />
+        <di:waypoint x="468" y="397" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_1f1ni4x_di" bpmnElement="ExpenseReportWithPaymentIssuesEndEvent">
+        <dc:Bounds x="1438" y="748" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1417" y="791" width="79" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_1puuc19_di" bpmnElement="SubProcess_0ay2kvb" isExpanded="true">
+        <dc:Bounds x="614" y="81" width="588" height="274" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_0djyqqm_di" bpmnElement="PaymentIssueStartEvent">
+        <dc:Bounds x="638" y="157" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="620" y="200" width="73" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1isdpsn_di" bpmnElement="SequenceFlow_1isdpsn">
+        <di:waypoint x="674" y="175" />
+        <di:waypoint x="724" y="175" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="UserTask_1oxwpch_di" bpmnElement="HandlePaymentIssuesTask">
+        <dc:Bounds x="724" y="135" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_06j6k94_di" bpmnElement="WhereIssuesHandledGateway" isMarkerVisible="true">
+        <dc:Bounds x="884" y="150" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="875" y="113" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1l9ircl_di" bpmnElement="SequenceFlow_1l9ircl">
+        <di:waypoint x="824" y="175" />
+        <di:waypoint x="884" y="175" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_06i3ppe_di" bpmnElement="PaymentIssuesSolvedEndEvent">
+        <dc:Bounds x="1055" y="157" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1034" y="200" width="79" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1trz3fr_di" bpmnElement="YesSequenceFlow1">
+        <di:waypoint x="934" y="175" />
+        <di:waypoint x="1055" y="175" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="964" y="155" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="StartEvent_060b2xy_di" bpmnElement="ExpenseReportApprovalRequestStartEvent">
+        <dc:Bounds x="181" y="613" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="156" y="656" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_115jbvn_di" bpmnElement="SequenceFlow_115jbvn">
+        <di:waypoint x="1112" y="631" />
+        <di:waypoint x="1184" y="631" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0dn19bp_di" bpmnElement="SequenceFlow_0dn19bp">
+        <di:waypoint x="1112" y="515" />
+        <di:waypoint x="1438" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_10x42pa_di" bpmnElement="UpdateExpenseStatusDeclinedTask">
+        <dc:Bounds x="1012" y="475" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0xh5o43_di" bpmnElement="UpdateExpenseStatusApprovedTask">
+        <dc:Bounds x="1012" y="591" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0vn2sig_di" bpmnElement="NoSequenceFlow1">
+        <di:waypoint x="909" y="200" />
+        <di:waypoint x="909" y="282" />
+        <di:waypoint x="1055" y="282" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="916" y="260" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_1ytalbn_di" bpmnElement="PaymentIssuesNotSolvedEndEvent">
+        <dc:Bounds x="1055" y="264" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1034" y="307" width="79" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
