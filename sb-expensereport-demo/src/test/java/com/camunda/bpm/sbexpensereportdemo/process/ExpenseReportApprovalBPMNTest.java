@@ -149,26 +149,6 @@ public class ExpenseReportApprovalBPMNTest {
     assertThat(processInstance).hasPassed("DefineApprovalLevelTask");
     assertThat(processInstance).hasPassed("DefineApproversTask");
     assertThat(processInstance).isWaitingAt("ApproveExpenseReportTask");
-
-    expenseReport.setLastApproval(ApprovalStatus.APPROVED);
-    HashMap<String, Object> approvalVariables = new HashMap<String, Object>();
-    approvalVariables.put(VARIABLE_EXPENSEREPORT_NAME, expenseReport);
-
-    taskQuery().active().list().forEach(task -> complete(task, approvalVariables));
-
-    assertThat(processInstance).hasPassed("NotifyApprovalTask");
-    assertThat(processInstance).hasPassed("UpdateExpenseStatusApprovedTask");
-    assertThat(processInstance).isWaitingAt("PaymentProcessCallActivity");
-    ProcessInstance paymentProcess = calledProcessInstance();
-    assertThat(paymentProcess).hasPassed("SendPaymentRequestTask");
-    assertThat(paymentProcess).isWaitingAt("WaitForPaymentConfirmationTask");
-
-    runtimeService().createMessageCorrelation("MessagePaymentConfirmation")
-            .processInstanceBusinessKey(expenseReport.getNumber())
-            .setVariable("paymentCorrect", true).correlate();
-
-    assertThat(paymentProcess).isEnded();
-    assertThat(processInstance).isEnded();
   }
 
   @Test
@@ -263,10 +243,5 @@ public class ExpenseReportApprovalBPMNTest {
 
     assertThat(paymentProcess).isEnded();
     assertThat(processInstance).isEnded();
-  }
-
-  @Test
-  public void testHappyPath(){
-
   }
 }

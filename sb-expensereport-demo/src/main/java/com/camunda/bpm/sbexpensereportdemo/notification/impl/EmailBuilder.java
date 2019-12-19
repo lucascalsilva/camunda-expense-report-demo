@@ -3,6 +3,7 @@ package com.camunda.bpm.sbexpensereportdemo.notification.impl;
 import com.camunda.bpm.model.common.Participant;
 import com.camunda.bpm.model.expenses.ExpenseReport;
 import com.camunda.bpm.model.notification.Email;
+import com.camunda.bpm.sbexpensereportdemo.config.TemplatesConfig;
 import com.camunda.bpm.sbexpensereportdemo.exceptions.NotificationBuilderException;
 import com.camunda.bpm.sbexpensereportdemo.notification.NotificationBuilder;
 import com.camunda.bpm.sbexpensereportdemo.util.PropertyNames;
@@ -23,16 +24,12 @@ import java.util.Map;
 public class EmailBuilder implements NotificationBuilder<Email, ExpenseReport, EmailType> {
 
     private final Configuration freemarkerConfig;
-    @Value(PropertyNames.TEMPLATES_EMAIL)
-    private String TEMPLATES_EMAIL;
-    @Value(PropertyNames.TEMPLATES_SUBJECT)
-    private String TEMPLATES_SUBJECT;
-    @Value(PropertyNames.TEMPLATES_TYPEVARIABLE)
-    private String TEMPLATES_TYPEVARIABLE;
+    private final TemplatesConfig templatesConfig;
 
     public Email build(String key, ExpenseReport obj, EmailType emailType, Participant participant) throws NotificationBuilderException {
-        String templateName = TEMPLATES_EMAIL.replace(TEMPLATES_TYPEVARIABLE, emailType.getTypeName());
-        String subjectTempName =  TEMPLATES_SUBJECT.replace(TEMPLATES_TYPEVARIABLE, emailType.getTypeName());
+
+        String templateName = templatesConfig.getEmailTemplate().replace(templatesConfig.getTypeVariable(), emailType.getTypeName());
+        String subjectTempName =  templatesConfig.getSubjectTemplate().replace(templatesConfig.getTypeVariable(), emailType.getTypeName());
 
         Template emailTemplate;
         Template subjectTemplate;
@@ -56,7 +53,6 @@ public class EmailBuilder implements NotificationBuilder<Email, ExpenseReport, E
         } catch (IOException | TemplateException e) {
             throw new NotificationBuilderException(e);
         }
-
 
         return email;
     }

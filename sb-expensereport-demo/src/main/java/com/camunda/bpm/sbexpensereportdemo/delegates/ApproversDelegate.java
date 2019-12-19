@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.camunda.bpm.sbexpensereportdemo.process.ProcessVariablesUtil.*;
+import static com.camunda.bpm.sbexpensereportdemo.process.ProcessVariables.*;
 
 @Component
 @RequiredArgsConstructor

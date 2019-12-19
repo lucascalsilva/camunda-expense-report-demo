@@ -14,21 +14,19 @@ camunda.bpm:
     create: All tasks
 server.port: 8080
 exception:
-  requesternotfound:
-    message: The requester provided was not found in Camunda BPM
-erp:
-  rest:
+  messages:
+    requester-not-found: The requester provided was not found in Camunda BPM
+services:
+  erp:
     timeout: 60000
     url: http://localhost:8081
-    approver-service:
-      base-path: /common/approvers
-    invoice-service:
-      base-path: /accounts-payable/invoices
-    email-service:
-      base-path: /notification/emails
+    paths:
+      approvers: /common/approvers
+      invoices: /accounts-payable/invoices
+      emails: /notification/emails
 templates:
-  email: er-type-email-template.ftl
-  subject: er-type-email-subj-template.ftl
+  email-template: er-type-email-template.ftl
+  subject-template: er-type-email-subj-template.ftl
   type-variable: type
 org.camunda.bpm.engine.persistence:
   logging-level: debug

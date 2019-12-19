@@ -2,6 +2,7 @@ package com.camunda.bpm.servicesdemo.config;
 
 import com.camunda.bpm.servicesdemo.util.PropertyNames;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -17,16 +18,16 @@ import java.time.Duration;
 
 @EnableScheduling
 @Configuration
+@RequiredArgsConstructor
 public class ApplicationConfig {
 
-    @Value(PropertyNames.CAMUNDA_REST_TIMEOUT)
-    private Long timeout;
+    private final ProcessEngineServicesConfig processEngineServicesConfig;
 
     @Bean
-    public RestTemplate standardRestTemplate(ClientHttpRequestInterceptor clientHttpRequestInterceptor){
+    public RestTemplate camundaRestTemplate(ClientHttpRequestInterceptor clientHttpRequestInterceptor){
         return new RestTemplateBuilder()
-                .setConnectTimeout(Duration.ofMillis(timeout))
-                .setReadTimeout(Duration.ofMillis(timeout))
+                .setConnectTimeout(Duration.ofMillis(processEngineServicesConfig.getTimeout()))
+                .setReadTimeout(Duration.ofMillis(processEngineServicesConfig.getTimeout()))
                 .additionalInterceptors(clientHttpRequestInterceptor)
                 .requestFactory(() -> new BufferingClientHttpRequestFactory(new SimpleClientHttpRequestFactory()))
                 .build();

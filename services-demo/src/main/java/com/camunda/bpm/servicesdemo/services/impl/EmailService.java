@@ -1,5 +1,6 @@
 package com.camunda.bpm.servicesdemo.services.impl;
 
+import com.camunda.bpm.servicesdemo.config.EmailServiceConfig;
 import com.camunda.bpm.servicesdemo.model.notification.Email;
 import com.camunda.bpm.servicesdemo.util.PropertyNames;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,7 @@ import java.util.List;
 public class EmailService {
 
     private final JavaMailSender emailSender;
-    @Value(PropertyNames.SPRING_MAIL_USERNAME)
-    private String SPRING_MAIL_USERNAME;
+    private final EmailServiceConfig emailServiceConfig;
 
     public List<Email> sendBatch(List<Email> emails) {
         List<Email> sentEmails = new ArrayList<>();
@@ -41,7 +41,7 @@ public class EmailService {
             helper.setTo(email.getTo());
             helper.setText(email.getContent(), true);
             helper.setSubject(email.getSubject());
-            helper.setFrom(SPRING_MAIL_USERNAME);
+            helper.setFrom(emailServiceConfig.getFromAddress());
             emailSender.send(message);
             return true;
         }

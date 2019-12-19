@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import static org.camunda.spin.Spin.JSON;
 
-public class ProcessVariablesUtil {
+public class ProcessVariables {
 
     public static final ExpenseReport getExpenseReport(DelegateExecution delegateExecution){
         Object obj = delegateExecution.getVariable(ProcessConstants.VARIABLE_EXPENSEREPORT_NAME);

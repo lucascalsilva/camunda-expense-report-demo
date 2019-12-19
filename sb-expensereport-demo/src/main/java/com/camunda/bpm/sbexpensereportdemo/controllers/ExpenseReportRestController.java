@@ -1,15 +1,13 @@
 package com.camunda.bpm.sbexpensereportdemo.controllers;
 
 import com.camunda.bpm.model.expenses.ExpenseReport;
+import com.camunda.bpm.sbexpensereportdemo.config.ExceptionMessagesConfig;
 import com.camunda.bpm.sbexpensereportdemo.exceptions.RequesterNotFound;
 import com.camunda.bpm.sbexpensereportdemo.process.ProcessConstants;
-import com.camunda.bpm.sbexpensereportdemo.util.PropertyNames;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.identity.User;
 import org.camunda.bpm.engine.variable.Variables;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -19,9 +17,7 @@ import java.util.HashMap;
 public class ExpenseReportRestController {
 
     private final ProcessEngine processEngine;
-
-    @Value(PropertyNames.EXCEPTION_REQUESTERNOTFOUND_MESSAGE)
-    private String EXCEPTION_REQUESTERNOTFOUND_MESSAGE;
+    private final ExceptionMessagesConfig exceptionMessagesConfig;
 
     @PostMapping("/expense-reports")
     public void startExpenseReportProcess(@RequestBody ExpenseReport expenseReport){
@@ -29,7 +25,7 @@ public class ExpenseReportRestController {
                 createUserQuery().userId(expenseReport.getRequester().getUser()).singleResult();
 
         if(requester == null) {
-            throw new RequesterNotFound(EXCEPTION_REQUESTERNOTFOUND_MESSAGE);
+            throw new RequesterNotFound(exceptionMessagesConfig.getRequesterNotFound());
         }
 
         expenseReport.getRequester().setEmail(requester.getEmail());

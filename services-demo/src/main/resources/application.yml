@@ -22,10 +22,13 @@ server.port: 8081
 scheduler:
   mail:
     delayTime: 30000
-camunda:
-  rest:
+services:
+  process-engine:
     timeout: 60000
     url: http://localhost:8080
-    expense-report-process:
-      start-path: /expense-reports
-      cancel-path: /expense-reports/{expenseReportNum}/cancel
+    paths:
+      expense-report-process:
+        start: /expense-reports
+        cancel: /expense-reports/{expenseReportNum}/cancel
+    mail:
+      from-address:

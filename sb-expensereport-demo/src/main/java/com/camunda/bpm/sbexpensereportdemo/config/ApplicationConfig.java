@@ -1,7 +1,6 @@
 package com.camunda.bpm.sbexpensereportdemo.config;
 
-import com.camunda.bpm.sbexpensereportdemo.util.PropertyNames;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,16 +12,16 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 
 @Configuration
+@RequiredArgsConstructor
 public class ApplicationConfig {
 
-    @Value(PropertyNames.ERP_REST_TIMEOUT)
-    private Long timeout;
+    private final ErpServicesConfig erpServicesConfig;
 
     @Bean
-    public RestTemplate standardRestTemplate(ClientHttpRequestInterceptor clientHttpRequestInterceptor){
+    public RestTemplate erpServicesRestTemplate(ClientHttpRequestInterceptor clientHttpRequestInterceptor){
         return new RestTemplateBuilder()
-                .setConnectTimeout(Duration.ofMillis(timeout))
-                .setReadTimeout(Duration.ofMillis(timeout))
+                .setConnectTimeout(Duration.ofMillis(erpServicesConfig.getTimeout()))
+                .setReadTimeout(Duration.ofMillis(erpServicesConfig.getTimeout()))
                 .additionalInterceptors(clientHttpRequestInterceptor)
                 .requestFactory(() -> new BufferingClientHttpRequestFactory(new SimpleClientHttpRequestFactory()))
                 .build();

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 import static com.camunda.bpm.sbexpensereportdemo.process.NotificationVariables.getEmailType;
 import static com.camunda.bpm.sbexpensereportdemo.process.NotificationVariables.getParticipant;
-import static com.camunda.bpm.sbexpensereportdemo.process.ProcessVariablesUtil.*;
+import static com.camunda.bpm.sbexpensereportdemo.process.ProcessVariables.*;
 
 @Component
 @RequiredArgsConstructor
